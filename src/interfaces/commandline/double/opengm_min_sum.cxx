@@ -53,6 +53,10 @@
 #endif
 #endif
 
+#ifdef WITH_SOSPD
+#include "../../common/caller/sospd_caller.hxx"
+#endif
+
 #ifdef WITH_CPLEX
 #include "../../common/caller/lpcplex_caller.hxx"
 //#include "../../common/caller/lpcplex2_caller.hxx"
@@ -182,6 +186,9 @@ int main(int argc, char** argv) {
       interface::AlphaExpansionFusionCaller<InterfaceType, GmType, AccumulatorType>,
       interface::RINFCaller<InterfaceType, GmType, AccumulatorType>,
 #endif
+#endif
+#ifdef WITH_SOSPD
+      interface::SoSPDCaller<InterfaceType, GmType, AccumulatorType>,
 #endif
 #ifdef WITH_GCO
       interface::GCOLIBCaller<InterfaceType, GmType, AccumulatorType>,

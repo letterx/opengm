@@ -42,19 +42,19 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR ("${CMAKE_CXX_COMPILER
    endif()
    # with warning
    if(WARNINGLEVEL STREQUAL "1" )
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++98")
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
    endif()
    # PEDANTIC -> a lot of warnings
    if(WARNINGLEVEL STREQUAL "2" )
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++98 -pedantic -Wno-long-long ")
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -pedantic -Wno-long-long ")
    endif() 
    # VERY PEDANTIC -> very lot of warnings
    if(WARNINGLEVEL STREQUAL "3" )
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++98 -pedantic -Wno-long-long -Wextra")
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -pedantic -Wno-long-long -Wextra")
    endif()
    # SADISTIC -> all warnings become errors
    if(WARNINGLEVEL STREQUAL "4" )
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++98 -pedantic -Wno-long-long -Wextra -Werror")
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -pedantic -Wno-long-long -Wextra -Werror")
    endif()
 elseif(MSVC)
    add_definitions(-D_SCL_SECURE_NO_WARNINGS)
@@ -83,6 +83,7 @@ OPTION(WITH_LIBDAI "Include wrapper for LIBDAI code" OFF)
 OPTION(WITH_DAOOPT "Include wrapper for DAOOPT code" OFF)
 OPTION(WITH_MPLP "Include wrapper for MPLP code" OFF)
 OPTION(WITH_OPENMP "Include OpenMP" OFF)
+OPTION(WITH_SOSPD "Include SoSPD" OFF)
 OPTION(WITH_VIGRA "Include VIGRA" OFF)
 OPTION(WITH_CONICBUNDLE "Include ConicBundleLibrary" OFF)
 OPTION(WITH_MATLAB "Activate MatLab-Code" OFF)
@@ -308,6 +309,21 @@ if(WITH_MAXFLOW)
 else()
    message(STATUS "build without external inference algorithm MaxFlow")
 endif(WITH_MAXFLOW)
+
+#--------------------------------------------------------------
+# SoSPD
+#--------------------------------------------------------------
+
+if (WITH_SOSPD)
+    message(STATUS "build with Sum-of-Submodular Primal Dual")
+    SET(SOSPD_INCLUDE_DIR "" CACHE STRING "Include directory for SoSPD")
+    SET(SOSPD_LIB CACHE STRING "Library for SoSPD")
+    message(STATUS "Sospd include dir:" ${SOSPD_INCLUDE_DIR})
+    include_directories(${SOSPD_INCLUDE_DIR})
+    add_definitions(-DWITH_SOSPD)
+else()
+    message(STATUS "build without Sum-of-Submodular Primal Dual")
+endif(WITH_SOSPD)
 
 #--------------------------------------------------------------
 # VIGRA
