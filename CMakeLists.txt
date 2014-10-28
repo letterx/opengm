@@ -33,7 +33,7 @@ include_directories(include)
 # warning level
 #-------------------------------------------------------------- 
 SET(WARNINGLEVEL "0" CACHE STRING "selected level for compiler warning from  0 (sloppy) to 4 (sadistic)") 
-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX OR ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang"))
    # no warnings
    if(WARNINGLEVEL STREQUAL "0" )
      message(STATUS "--------------------------------------------------------------------------")
