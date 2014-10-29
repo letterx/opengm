@@ -55,6 +55,7 @@
 
 #ifdef WITH_SOSPD
 #include "../../common/caller/sospd_caller.hxx"
+#include "../../common/caller/sos_ub_caller.hxx"
 #endif
 
 #ifdef WITH_CPLEX
@@ -189,6 +190,7 @@ int main(int argc, char** argv) {
 #endif
 #ifdef WITH_SOSPD
       interface::SoSPDCaller<InterfaceType, GmType, AccumulatorType>,
+      interface::SoS_UBCaller<InterfaceType, GmType, AccumulatorType>,
 #endif
 #ifdef WITH_GCO
       interface::GCOLIBCaller<InterfaceType, GmType, AccumulatorType>,
