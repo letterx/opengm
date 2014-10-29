@@ -40,7 +40,8 @@ public:
          randSeedOrder_(0),
          randSeedLabel_(0),
          labelOrder_(),
-         label_()
+         label_(),
+         ubFn_(SoSGraph::UBfn::pairwise)
       {}
 
       size_t maxNumberOfSteps_;
@@ -50,6 +51,7 @@ public:
       unsigned int randSeedLabel_;
       std::vector<LabelType> labelOrder_;
       std::vector<LabelType> label_;
+      SoSGraph::UBfn ubFn_;
    };
 
    SoSPDWrapper(const GraphicalModelType&, Parameter para = Parameter());
@@ -248,7 +250,9 @@ SoSPDWrapper<GM, ACC>::infer
         energy.addClique(MultilabelEnergy::CliquePtr{ new CliqueWrapper{gm_[f]} });
     }
 
-    SoSPD<> sospd(&energy);
+    SubmodularIBFSParams params;
+    params.ub = parameter_.ubFn_;
+    SoSPD<> sospd(&energy, params);
 
     auto proposalCallback = [&](int niter, const std::vector<MultilabelEnergy::Label>&, std::vector<MultilabelEnergy::Label>& proposed) {
         for (auto& l : proposed)

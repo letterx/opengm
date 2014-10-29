@@ -32,6 +32,7 @@ protected:
    size_t maxNumberOfSteps_;
    size_t randSeedLabel_;
    std::string desiredLabelInitialType_;
+   std::string desiredUBType_;
    std::vector<typename GM::LabelType> label_;
  
    void runImpl(GM& model, OutputBase& output, const bool verbose);
@@ -48,6 +49,11 @@ inline SoS_UBCaller<IO, GM, ACC>::SoS_UBCaller(IO& ioIn)
    permittedLabelInitialTypes.push_back("EXPLICIT");
    addArgument(StringArgument<>(desiredLabelInitialType_, "", "labelInitialType", "select the desired initial label", permittedLabelInitialTypes.at(0), permittedLabelInitialTypes));
    addArgument(VectorArgument<std::vector<typename GM::LabelType> >(label_, "", "label", "location of the file containing a vector which specifies the desired label", false));
+   std::vector<std::string> permittedUBTypes = { 
+       std::string {"pairwise"},
+       std::string {"chen"}
+   };
+   addArgument(StringArgument<>(desiredUBType_, "", "ubType", "Select which upper bound to use", permittedUBTypes.at(0), permittedUBTypes));
 
 }
 
@@ -70,6 +76,15 @@ void SoS_UBCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, const boo
       parameter.labelInitialType_ = SoS_UBType::Parameter::EXPLICIT_LABEL;
    } else {
       throw RuntimeError("Unknown initial label type!");
+   }
+
+   // UBType
+   if (desiredUBType_ == "pairwise") {
+       parameter.ubFn_ = SoSGraph::UBfn::pairwise;
+   } else if (desiredUBType_ == "chen") {
+       parameter.ubFn_ = SoSGraph::UBfn::chen;
+   } else {
+      throw RuntimeError("Unknown UB type!");
    }
 
    this-> template infer<SoS_UBType, TimingVisitorType, typename SoS_UBType::Parameter>(model, output, verbose, parameter);

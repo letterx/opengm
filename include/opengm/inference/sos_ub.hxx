@@ -36,13 +36,15 @@ public:
       :  maxNumberOfSteps_(maxNumberOfSteps),
          labelInitialType_(DEFAULT_LABEL),
          randSeedLabel_(0),
-         label_()
+         label_(),
+         ubFn_(SoSGraph::UBfn::pairwise)
       {}
 
       size_t maxNumberOfSteps_;
       LabelingIntitialType labelInitialType_;
       unsigned int randSeedLabel_;
       std::vector<LabelType> label_;
+      SoSGraph::UBfn ubFn_;
    };
 
    SoS_UBWrapper(const GraphicalModelType&, Parameter para = Parameter());
@@ -186,7 +188,9 @@ SoS_UBWrapper<GM, ACC>::infer
 {
    visitor.begin(*this);
 
-   SubmodularIBFS solver;
+   SubmodularIBFSParams params;
+   params.ub = parameter_.ubFn_;
+   SubmodularIBFS solver{params};
    solver.AddNode(gm_.numberOfVariables());
 
    for(IndexType f=0; f<gm_.numberOfFactors(); ++f){
