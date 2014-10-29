@@ -52,6 +52,7 @@ inline  FusionCaller<IO, GM, ACC>::FusionCaller(IO& ioIn)
    fusion.push_back("QPBO");
    fusion.push_back("LF");
    fusion.push_back("ILP");
+   fusion.push_back("SOS");
    std::vector<std::string> gen;  
    gen.push_back("A-EXP");
    gen.push_back("AB-SWAP");
@@ -94,6 +95,8 @@ inline void FusionCaller<IO, GM, ACC>::setParam(
       param.fusionParam_.fusionSolver_ = INF::FusionMover::QpboFusion;
    if(selectedFusionType_=="ILP")  
       param.fusionParam_.fusionSolver_ = INF::FusionMover::CplexFuison;
+   if(selectedFusionType_=="SOS")
+      param.fusionParam_.fusionSolver_ = INF::FusionMover::SoSFusion;
 
 
    param.numIt_ = numIt_;

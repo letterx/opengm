@@ -204,7 +204,7 @@ SoS_UBWrapper<GM, ACC>::infer
           IndexType var = gm_[f].variableIndex(0);
           ValueType e0 = gm_[f](&dummyLabels[0]);
           ValueType e1 = gm_[f](&dummyLabels[1]);
-          solver.AddUnaryTerm(var, e1 - e0);
+          solver.AddUnaryTerm(var, e0*DoubleToREALScale, e1*DoubleToREALScale);
        } else {
            std::vector<SubmodularIBFS::NodeId> nodes(c.variableIndicesBegin(), c.variableIndicesEnd());
            const uint32_t maxAssgn = 1 << k;

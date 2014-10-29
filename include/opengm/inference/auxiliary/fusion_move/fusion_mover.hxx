@@ -25,6 +25,9 @@
 #include "opengm/inference/reducedinference.hxx"
 #include "opengm/inference/hqpbo.hxx"
 #endif
+#ifdef WITH_SOSPD
+#include "opengm/inference/sos_ub.hxx"
+#endif
 
 
 
@@ -423,6 +426,9 @@ public:
     #ifdef WITH_CPLEX
     typedef opengm::LPCplex<SubGmType,AccumulationType>         CplexSubInf;
     #endif
+    #ifdef WITH_SOSPD
+    typedef opengm::SoS_UBWrapper<SubGmType,AccumulationType>       SoSSubInf;
+    #endif
 
     typedef opengm::LazyFlipper<SubGmType,AccumulationType>     LazyFlipperSubInf;
 
@@ -433,7 +439,8 @@ public:
         DefaulFusion,
         QpboFusion,
         LazyFlipperFusion,
-        CplexFuison
+        CplexFuison,
+        SoSFusion
     };
 
     struct Parameter{
@@ -487,6 +494,11 @@ public:
         if(param_.fusionSolver_ == CplexFuison){
             #ifndef  WITH_CPLEX 
                 throw RuntimeError("WITH_CPLEX need to be enabled for CplexFusion");
+            #endif
+        }
+        if (param_.fusionSolver_ == SoSFusion){
+            #ifndef WITH_SOSPD
+                throw RuntimeError("WITH_SOSPD needs to be enabled for SoSFusion");
             #endif
         }
         if(param_.reducedInf_){
@@ -557,6 +569,10 @@ public:
                     const typename LazyFlipperSubInf::Parameter fuseInfParam(param_.maxSubgraphSize_);
                     valRes = fusionMover_. template fuse<LazyFlipperSubInf> (fuseInfParam, true);
                 }
+            }
+            else if(param_.fusionSolver_ == SoSFusion){
+                    typename SoSSubInf::Parameter subInfParam;
+                    valRes = fusionMover_. template fuse<SoSSubInf> (subInfParam,true);
             }
             else{
                throw RuntimeError("Unknown Fusion Type! Maybe caused by missing linking!");
