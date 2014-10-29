@@ -15,7 +15,7 @@ template <class IO, class GM, class ACC>
 class SoSPDCaller : public InferenceCallerBase<IO, GM, ACC, SoSPDCaller<IO, GM, ACC> > {
 
 public: 
-   typedef SoSPD<GM, ACC> SoSPDType;
+   typedef SoSPDWrapper<GM, ACC> SoSPDType;
    typedef InferenceCallerBase<IO, GM, ACC, SoSPDCaller<IO, GM, ACC> > BaseClass;
    typedef typename SoSPDType::VerboseVisitorType VerboseVisitorType;
    typedef typename SoSPDType::EmptyVisitorType EmptyVisitorType;

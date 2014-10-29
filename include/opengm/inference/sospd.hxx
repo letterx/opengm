@@ -16,15 +16,15 @@ namespace opengm {
 ///
 /// \ingroup inference
 template<class GM, class ACC>
-class SoSPD : public Inference<GM, ACC>
+class SoSPDWrapper : public Inference<GM, ACC>
 {
 public:
    typedef GM GraphicalModelType; 
    typedef ACC AccumulationType;
    OPENGM_GM_TYPE_TYPEDEFS;
-   typedef visitors::VerboseVisitor<SoSPD<GM,ACC> > VerboseVisitorType;
-   typedef visitors::EmptyVisitor<SoSPD<GM,ACC> >   EmptyVisitorType;
-   typedef visitors::TimingVisitor<SoSPD<GM,ACC> >  TimingVisitorType;
+   typedef visitors::VerboseVisitor<SoSPDWrapper<GM,ACC> > VerboseVisitorType;
+   typedef visitors::EmptyVisitor<SoSPDWrapper<GM,ACC> >   EmptyVisitorType;
+   typedef visitors::TimingVisitor<SoSPDWrapper<GM,ACC> >  TimingVisitorType;
 
    struct Parameter {
       enum LabelingIntitialType {DEFAULT_LABEL, RANDOM_LABEL, LOCALOPT_LABEL, EXPLICIT_LABEL};
@@ -52,7 +52,7 @@ public:
       std::vector<LabelType> label_;
    };
 
-   SoSPD(const GraphicalModelType&, Parameter para = Parameter());
+   SoSPDWrapper(const GraphicalModelType&, Parameter para = Parameter());
 
    std::string name() const;
    const GraphicalModelType& graphicalModel() const;
@@ -66,9 +66,27 @@ public:
    InferenceTermination arg(std::vector<LabelType>&, const size_t = 1) const;
 
 private:
+   class CliqueWrapper : public Clique {
+       public:
+           CliqueWrapper(const FactorType& f)
+            : m_f(f),
+            m_nodes(f.variableIndicesBegin(), f.variableIndicesEnd()) { }
+
+           virtual REAL energy(const Label buf[]) const override {
+              return static_cast<REAL>(m_f(buf)*DoubleToREALScale);
+           }
+           virtual const VarId* nodes() const override { return m_nodes.data(); }
+           virtual size_t size() const override { return m_nodes.size(); }
+
+       protected:
+           const FactorType& m_f;
+           std::vector<VarId> m_nodes;
+   };
+
    const GraphicalModelType& gm_;
    Parameter parameter_; 
    static const size_t maxOrder_ =10;
+   static constexpr double DoubleToREALScale = 10000;
    std::vector<LabelType> label_;
    std::vector<LabelType> labelList_;
    size_t maxState_;
@@ -84,14 +102,14 @@ private:
 
 template<class GM, class ACC>
 inline std::string
-SoSPD<GM, ACC>::name() const
+SoSPDWrapper<GM, ACC>::name() const
 {
    return "SoSPD";
 }
 
 template<class GM, class ACC>
-inline const typename SoSPD<GM, ACC>::GraphicalModelType&
-SoSPD<GM, ACC>::graphicalModel() const
+inline const typename SoSPDWrapper<GM, ACC>::GraphicalModelType&
+SoSPDWrapper<GM, ACC>::graphicalModel() const
 {
    return gm_;
 }
@@ -99,7 +117,7 @@ SoSPD<GM, ACC>::graphicalModel() const
 template<class GM, class ACC>
 template<class StateIterator>
 inline void
-SoSPD<GM, ACC>::setState
+SoSPDWrapper<GM, ACC>::setState
 (
    StateIterator begin,
    StateIterator end
@@ -110,9 +128,9 @@ SoSPD<GM, ACC>::setState
 
 template<class GM, class ACC>
 inline void
-SoSPD<GM,ACC>::setStartingPoint
+SoSPDWrapper<GM,ACC>::setStartingPoint
 (
-   typename std::vector<typename SoSPD<GM,ACC>::LabelType>::const_iterator begin
+   typename std::vector<typename SoSPDWrapper<GM,ACC>::LabelType>::const_iterator begin
 ) {
    try{
       label_.assign(begin, begin+gm_.numberOfVariables());
@@ -124,7 +142,7 @@ SoSPD<GM,ACC>::setStartingPoint
 
 template<class GM, class ACC>
 inline
-SoSPD<GM, ACC>::SoSPD
+SoSPDWrapper<GM, ACC>::SoSPDWrapper
 (
    const GraphicalModelType& gm,
    Parameter para
@@ -179,7 +197,7 @@ SoSPD<GM, ACC>::SoSPD
 // the graphical model has not changed
 template<class GM, class ACC>
 inline void
-SoSPD<GM, ACC>::reset() {
+SoSPDWrapper<GM, ACC>::reset() {
    if(parameter_.labelInitialType_ == Parameter::RANDOM_LABEL) {
       setInitialLabelRandom(parameter_.randSeedLabel_);
    }
@@ -210,7 +228,7 @@ SoSPD<GM, ACC>::reset() {
 
 template<class GM, class ACC>
 inline InferenceTermination
-SoSPD<GM, ACC>::infer()
+SoSPDWrapper<GM, ACC>::infer()
 {
    EmptyVisitorType visitor;
    return infer(visitor);
@@ -219,11 +237,25 @@ SoSPD<GM, ACC>::infer()
 template<class GM, class ACC>
 template<class Visitor>
 InferenceTermination
-SoSPD<GM, ACC>::infer
+SoSPDWrapper<GM, ACC>::infer
 (
    Visitor& visitor
 )
 {
+    MultilabelEnergy energy(maxState_);
+    energy.addVar(gm_.numberOfVariables());
+    for(IndexType f=0; f<gm_.numberOfFactors(); ++f){
+        energy.addClique(MultilabelEnergy::CliquePtr{ new CliqueWrapper{gm_[f]} });
+    }
+
+    SoSPD<> sospd(&energy);
+
+    auto proposalCallback = [&](int niter, const std::vector<MultilabelEnergy::Label>&, std::vector<MultilabelEnergy::Label>& proposed) {
+        for (auto& l : proposed)
+            l = alpha_;
+    };
+    sospd.SetProposalCallback(proposalCallback);
+
    bool exitInf = false;
    size_t it = 0;
    size_t countUnchanged = 0;
@@ -234,79 +266,12 @@ SoSPD<GM, ACC>::infer
    visitor.begin(*this);
    while(it++ < parameter_.maxNumberOfSteps_ && countUnchanged < maxState_ && exitInf == false) {
       // DO MOVE 
-      unsigned int maxNumAssignments = 1 << maxOrder_;
-      std::vector<ValueType> coeffs(maxNumAssignments);
-      std::vector<LabelType> cliqueLabels(maxOrder_);
-
-      HigherOrderEnergy<ValueType, maxOrder_> hoe;
-      hoe.AddVars(gm_.numberOfVariables());
-      for(IndexType f=0; f<gm_.numberOfFactors(); ++f){
-         IndexType size = gm_[f].numberOfVariables();
-         if (size == 0) {
-            continue;
-         } else if (size == 1) {
-            IndexType var = gm_[f].variableIndex(0);
-            ValueType e0 = gm_[f](&label_[var]);
-            ValueType e1 = gm_[f](&alpha_);
-            hoe.AddUnaryTerm(var, e1 - e0);
-         } else {
-
-            // unsigned int numAssignments = std::pow(2,size);
-            unsigned int numAssignments = 1 << size;
-            // -- // ValueType coeffs[numAssignments];
-            for (unsigned int subset = 1; subset < numAssignments; ++subset) {
-               coeffs[subset] = 0;
-            }
-            // For each boolean assignment, get the clique energy at the 
-            // corresponding labeling
-            // -- // LabelType cliqueLabels[size];
-            for(unsigned int assignment = 0;  assignment < numAssignments; ++assignment){
-               for (unsigned int i = 0; i < size; ++i) {
-                  // only true for each second assigment?!?
-                  //if (    assignment%2 ==  (std::pow(2,i))%2  )
-                  if (assignment & (1 << i)) { 
-                     cliqueLabels[i] = alpha_;
-                  } else {
-                     cliqueLabels[i] = label_[gm_[f].variableIndex(i)];
-                  }
-               }
-               ValueType energy = gm_[f](cliqueLabels.begin());
-               for (unsigned int subset = 1; subset < numAssignments; ++subset){
-                  // if (assigment%2 != subset%2)
-                  if (assignment & ~subset) {
-                     continue;
-                  } 
-                  //(assigment%2 == subset%2)
-                  else {
-                     int parity = 0;
-                     for (unsigned int b = 0; b < size; ++b) {
-                        parity ^=  (((assignment ^ subset) & (1 << b)) != 0);
-                     }
-                     coeffs[subset] += parity ? -energy : energy;
-                  }
-               }
-            }
-            typename HigherOrderEnergy<ValueType, maxOrder_> ::VarId vars[maxOrder_];
-            for (unsigned int subset = 1; subset < numAssignments; ++subset) {
-               int degree = 0;
-               for (unsigned int b = 0; b < size; ++b) {
-                  if (subset & (1 << b)) {
-                     vars[degree++] = gm_[f].variableIndex(b);
-                  }
-               }
-               std::sort(vars, vars+degree);
-               hoe.AddTerm(coeffs[subset], degree, vars);
-            }
-         }
-      }  
-      kolmogorov::qpbo::QPBO<ValueType>  qr(gm_.numberOfVariables(), 0); 
-      hoe.ToQuadratic(qr);
-      qr.Solve();
+      sospd.Solve(1);
       IndexType numberOfChangedVariables = 0;
       for (IndexType i = 0; i < gm_.numberOfVariables(); ++i) {
-         int label = qr.GetLabel(i);
-         if (label == 1) {
-            label_[i] = alpha_;
+         int label = sospd.GetLabel(i);
+         if (label_[i] != label) {
+            label_[i] = label;
             ++numberOfChangedVariables;
          } 
       }
@@ -334,7 +299,7 @@ SoSPD<GM, ACC>::infer
 
 template<class GM, class ACC>
 inline InferenceTermination
-SoSPD<GM, ACC>::arg
+SoSPDWrapper<GM, ACC>::arg
 (
    std::vector<LabelType>& arg,
    const size_t n
@@ -355,7 +320,7 @@ SoSPD<GM, ACC>::arg
 
 template<class GM, class ACC>
 inline void
-SoSPD<GM, ACC>::setLabelOrder
+SoSPDWrapper<GM, ACC>::setLabelOrder
 (
    std::vector<LabelType>& l
 ) {
@@ -366,7 +331,7 @@ SoSPD<GM, ACC>::setLabelOrder
 
 template<class GM, class ACC>
 inline void
-SoSPD<GM, ACC>::setLabelOrderRandom
+SoSPDWrapper<GM, ACC>::setLabelOrderRandom
 (
    unsigned int seed
 ) {
@@ -380,7 +345,7 @@ SoSPD<GM, ACC>::setLabelOrderRandom
 
 template<class GM, class ACC>
 inline void
-SoSPD<GM, ACC>::setInitialLabel
+SoSPDWrapper<GM, ACC>::setInitialLabel
 (
    std::vector<LabelType>& l
 ) {
@@ -397,7 +362,7 @@ SoSPD<GM, ACC>::setInitialLabel
 
 template<class GM, class ACC>
 inline void
-SoSPD<GM, ACC>::setInitialLabelLocalOptimal() {
+SoSPDWrapper<GM, ACC>::setInitialLabelLocalOptimal() {
    label_.resize(gm_.numberOfVariables(), 0);
    std::vector<size_t> accVec;
    for(size_t i=0; i<gm_.numberOfFactors();++i) {
@@ -416,7 +381,7 @@ SoSPD<GM, ACC>::setInitialLabelLocalOptimal() {
 
 template<class GM, class ACC>
 inline void
-SoSPD<GM, ACC>::setInitialLabelRandom
+SoSPDWrapper<GM, ACC>::setInitialLabelRandom
 (
    unsigned int seed
 ) {
@@ -429,7 +394,7 @@ SoSPD<GM, ACC>::setInitialLabelRandom
 
 template<class GM, class ACC>
 inline void
-SoSPD<GM, ACC>::incrementAlpha() {
+SoSPDWrapper<GM, ACC>::incrementAlpha() {
    counter_ = (counter_+1) % maxState_;
    alpha_ = labelList_[counter_];
 }
