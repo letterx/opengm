@@ -1026,6 +1026,45 @@ private:
 
 
 template<class GM, class ACC>
+class BinaryFlipGen
+{
+public:
+    typedef ACC AccumulationType;
+    typedef GM GraphicalModelType;
+    OPENGM_GM_TYPE_TYPEDEFS;
+    struct Parameter { };
+
+    BinaryFlipGen(const GM &gm, const Parameter &param)
+        :  gm_(gm)
+    { 
+        if (gm.maxNumberOfLabels() > 2) {
+            throw RuntimeError("Can only use Binary Flip fusion on binary energy");
+        }
+    }
+
+    void reset() { }
+    
+    size_t defaultNumStopIt() {return 2;}
+   
+    void getProposal(const std::vector<LabelType> &current , std::vector<LabelType> &proposal)
+    {
+        for (IndexType vi = 0; vi < gm_.numberOfVariables(); ++vi)
+        {
+            const size_t numL = gm_.numberOfLabels(vi);
+            if (numL == 1)
+                proposal[vi] = current[vi];
+            else if (numL == 2)
+                proposal[vi] = 1-current[vi];
+            else
+                throw RuntimeError("Non-binary variables in Binary Flip proposal");
+        }
+    } 
+private:
+    const GM &gm_;
+};
+
+
+template<class GM, class ACC>
 class DynamincGen{
 public:
    typedef ACC AccumulationType;
