@@ -60,10 +60,10 @@ inline SoSPDCaller<IO, GM, ACC>::SoSPDCaller(IO& ioIn)
    addArgument(Size_TArgument<>(randSeedLabel_, "", "randSeedLabel", "Add description for randSeedLabel here!!!!.", (size_t)0));
    addArgument(VectorArgument<std::vector<typename GM::LabelType> >(labelOrder_, "", "labelorder", "location of the file containing a vector which specifies the desired label order", false));
    addArgument(VectorArgument<std::vector<typename GM::LabelType> >(label_, "", "label", "location of the file containing a vector which specifies the desired label", false));
-   std::vector<std::string> permittedUBTypes = { 
-       std::string {"pairwise"},
-       std::string {"chen"}
-   };
+   std::vector<std::string> permittedUBTypes;
+   for (const auto& tuple : SoSGraph::ubParamList) {
+       permittedUBTypes.push_back(std::get<1>(tuple));
+   }
    addArgument(StringArgument<>(desiredUBType_, "", "ubType", "Select which upper bound to use", permittedUBTypes.at(0), permittedUBTypes));
 
 }
@@ -103,13 +103,15 @@ void SoSPDCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, const bool
    }
 
    // UBType
-   if (desiredUBType_ == "pairwise") {
-       parameter.ubFn_ = SoSGraph::UBfn::pairwise;
-   } else if (desiredUBType_ == "chen") {
-       parameter.ubFn_ = SoSGraph::UBfn::chen;
-   } else {
-      throw RuntimeError("Unknown UB type!");
+   bool argFound = false;
+   for (const auto& tuple : SoSGraph::ubParamList) {
+       if (desiredUBType_ == std::get<1>(tuple)) {
+           argFound = true;
+           parameter.ubFn_ = std::get<0>(tuple);
+       }
    }
+   if (!argFound)
+      throw RuntimeError("Unknown UB type!");
 
    this-> template infer<SoSPDType, TimingVisitorType, typename SoSPDType::Parameter>(model, output, verbose, parameter);
 

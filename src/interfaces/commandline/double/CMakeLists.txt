@@ -47,6 +47,7 @@
     endif(WITH_MAXFLOW)
     if (WITH_SOSPD)
         target_link_libraries(opengm_min_sum ${SOSPD_LIB})
+        target_link_libraries(opengm_min_sum ${GUROBI_LIBRARY})
     endif(WITH_SOSPD)
     if(WITH_CPLEX)
         if(WIN32)

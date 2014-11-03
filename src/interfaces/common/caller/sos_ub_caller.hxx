@@ -49,10 +49,10 @@ inline SoS_UBCaller<IO, GM, ACC>::SoS_UBCaller(IO& ioIn)
    permittedLabelInitialTypes.push_back("EXPLICIT");
    addArgument(StringArgument<>(desiredLabelInitialType_, "", "labelInitialType", "select the desired initial label", permittedLabelInitialTypes.at(0), permittedLabelInitialTypes));
    addArgument(VectorArgument<std::vector<typename GM::LabelType> >(label_, "", "label", "location of the file containing a vector which specifies the desired label", false));
-   std::vector<std::string> permittedUBTypes = { 
-       std::string {"pairwise"},
-       std::string {"chen"}
-   };
+   std::vector<std::string> permittedUBTypes;
+   for (const auto& tuple : SoSGraph::ubParamList) {
+       permittedUBTypes.push_back(std::get<1>(tuple));
+   }
    addArgument(StringArgument<>(desiredUBType_, "", "ubType", "Select which upper bound to use", permittedUBTypes.at(0), permittedUBTypes));
 
 }
@@ -79,11 +79,14 @@ void SoS_UBCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, const boo
    }
 
    // UBType
-   if (desiredUBType_ == "pairwise") {
-       parameter.ubFn_ = SoSGraph::UBfn::pairwise;
-   } else if (desiredUBType_ == "chen") {
-       parameter.ubFn_ = SoSGraph::UBfn::chen;
-   } else {
+   bool ubFound = false;
+   for (const auto& tuple : SoSGraph::ubParamList) {
+       if (desiredUBType_ == std::get<1>(tuple)) {
+           ubFound = true;
+           parameter.ubFn_ = std::get<0>(tuple);
+       }
+   }
+   if (!ubFound) {
       throw RuntimeError("Unknown UB type!");
    }
 
