@@ -37,6 +37,7 @@ protected:
    std::string desiredLabelInitialType_;
    std::string desiredUBType_;
    std::string desiredOrderType_;
+   std::string desiredProposalType_;
  
    void runImpl(GM& model, OutputBase& output, const bool verbose);
 };
@@ -44,13 +45,16 @@ protected:
 template <class IO, class GM, class ACC>
 inline SoSPDCaller<IO, GM, ACC>::SoSPDCaller(IO& ioIn)
    : BaseClass(name_, "detailed description of Alpha-Expansion-Fusion caller...", ioIn) {
+   // maxIt
    addArgument(Size_TArgument<>(maxNumberOfSteps_, "", "maxIt", "Maximum number of iterations.", (size_t)1000));
+   // labelInitialType
    std::vector<std::string> permittedLabelInitialTypes;
    permittedLabelInitialTypes.push_back("DEFAULT");
    permittedLabelInitialTypes.push_back("RANDOM");
    permittedLabelInitialTypes.push_back("LOCALOPT");
    permittedLabelInitialTypes.push_back("EXPLICIT");
    addArgument(StringArgument<>(desiredLabelInitialType_, "", "labelInitialType", "select the desired initial label", permittedLabelInitialTypes.at(0), permittedLabelInitialTypes));
+   // orderType
    std::vector<std::string> permittedOrderTypes;
    permittedOrderTypes.push_back("DEFAULT");
    permittedOrderTypes.push_back("RANDOM");
@@ -60,11 +64,15 @@ inline SoSPDCaller<IO, GM, ACC>::SoSPDCaller(IO& ioIn)
    addArgument(Size_TArgument<>(randSeedLabel_, "", "randSeedLabel", "Add description for randSeedLabel here!!!!.", (size_t)0));
    addArgument(VectorArgument<std::vector<typename GM::LabelType> >(labelOrder_, "", "labelorder", "location of the file containing a vector which specifies the desired label order", false));
    addArgument(VectorArgument<std::vector<typename GM::LabelType> >(label_, "", "label", "location of the file containing a vector which specifies the desired label", false));
+   // permittedUBTypes
    std::vector<std::string> permittedUBTypes;
    for (const auto& tuple : SoSGraph::ubParamList) {
        permittedUBTypes.push_back(std::get<1>(tuple));
    }
    addArgument(StringArgument<>(desiredUBType_, "", "ubType", "Select which upper bound to use", permittedUBTypes.at(0), permittedUBTypes));
+   // proposalType
+   std::vector<std::string> permittedProposalTypes = { "aexp", "blur" };
+   addArgument(StringArgument<>(desiredProposalType_, "", "proposal", "Select which proposal generator to use", permittedProposalTypes.at(0), permittedProposalTypes));
 
 }
 
@@ -112,6 +120,15 @@ void SoSPDCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, const bool
    }
    if (!argFound)
       throw RuntimeError("Unknown UB type!");
+
+   // ProposalType
+   if (desiredProposalType_ == "aexp") {
+       parameter.proposalType_ = SoSPDType::Parameter::AEXP;
+   } else if (desiredProposalType_ == "blur") {
+       parameter.proposalType_ = SoSPDType::Parameter::BLUR;
+   } else {
+      throw RuntimeError("Unknown proposal type!");
+   } 
 
    this-> template infer<SoSPDType, TimingVisitorType, typename SoSPDType::Parameter>(model, output, verbose, parameter);
 

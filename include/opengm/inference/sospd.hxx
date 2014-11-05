@@ -4,6 +4,7 @@
 
 #include "opengm/inference/inference.hxx"
 #include "opengm/inference/visitors/visitors.hxx"
+#include "opengm/inference/fusion_based_inf.hxx"
 #include "sospd.hpp"
 
 namespace opengm {
@@ -29,6 +30,7 @@ public:
    struct Parameter {
       enum LabelingIntitialType {DEFAULT_LABEL, RANDOM_LABEL, LOCALOPT_LABEL, EXPLICIT_LABEL};
       enum OrderType {DEFAULT_ORDER, RANDOM_ORDER, EXPLICIT_ORDER};
+      enum ProposalType {AEXP, BLUR};
 
       Parameter
       (
@@ -41,7 +43,8 @@ public:
          randSeedLabel_(0),
          labelOrder_(),
          label_(),
-         ubFn_(SoSGraph::UBfn::pairwise)
+         ubFn_(SoSGraph::UBfn::pairwise),
+         proposalType_(AEXP)
       {}
 
       size_t maxNumberOfSteps_;
@@ -52,6 +55,7 @@ public:
       std::vector<LabelType> labelOrder_;
       std::vector<LabelType> label_;
       SoSGraph::UBfn ubFn_;
+      ProposalType proposalType_;
    };
 
    SoSPDWrapper(const GraphicalModelType&, Parameter para = Parameter());
@@ -254,11 +258,23 @@ SoSPDWrapper<GM, ACC>::infer
     params.ub = parameter_.ubFn_;
     SoSPD<> sospd(&energy, params);
 
-    auto proposalCallback = [&](int niter, const std::vector<MultilabelEnergy::Label>&, std::vector<MultilabelEnergy::Label>& proposed) {
-        for (auto& l : proposed)
-            l = alpha_;
-    };
-    sospd.SetProposalCallback(proposalCallback);
+    typename proposal_gen::AlphaExpansionGen<GM,ACC>::Parameter aexpParam; 
+    proposal_gen::AlphaExpansionGen<GM,ACC> aexpGen(gm_, aexpParam);
+
+    typename proposal_gen::BlurGen<GM,ACC>::Parameter blurParam;
+    proposal_gen::BlurGen<GM,ACC> blurGen(gm_, blurParam);
+
+    SoSPD<>::ProposalCallback pc;
+    if (parameter_.proposalType_ == Parameter::AEXP) {
+        pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
+            aexpGen.getProposal(current, proposed);
+        };
+    } else if (parameter_.proposalType_ == Parameter::BLUR) {
+        pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
+            blurGen.getProposal(current, proposed);
+        };
+    }
+    sospd.SetProposalCallback(pc);
 
    bool exitInf = false;
    size_t it = 0;
