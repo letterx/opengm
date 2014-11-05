@@ -38,6 +38,7 @@ protected:
    bool reducedInf_,connectedComponents_,tentacles_;
    float temperature_;
    double sigma_;
+   std::string desiredUBType_;
    
 public:
    const static std::string name_;
@@ -76,6 +77,11 @@ inline  FusionCaller<IO, GM, ACC>::FusionCaller(IO& ioIn)
    addArgument(BoolArgument(tentacles_,"","tentacles", "use reduced inference tentacles"));
    addArgument(FloatArgument<>(temperature_, "temp", "temperature", "temperature for non uniform random proposal generator", static_cast<float>(1.0))); 
    addArgument(DoubleArgument<>(sigma_, "", "sigma", "standard devariation used for bluring", static_cast<double>(20.0)));
+   std::vector<std::string> permittedUBTypes;
+   for (const auto& tuple : SoSGraph::ubParamList) {
+       permittedUBTypes.push_back(std::get<1>(tuple));
+   }
+   addArgument(StringArgument<>(desiredUBType_, "", "ubType", "Select which upper bound to use", permittedUBTypes.at(0), permittedUBTypes));
 }
 
 template <class IO, class GM, class ACC>
@@ -109,6 +115,18 @@ inline void FusionCaller<IO, GM, ACC>::setParam(
    param.fusionParam_.reducedInf_          = reducedInf_;
    param.fusionParam_.connectedComponents_ = connectedComponents_;
    param.fusionParam_.tentacles_           = tentacles_;
+
+   // UBType
+   bool argFound = false;
+   for (const auto& tuple : SoSGraph::ubParamList) {
+       if (desiredUBType_ == std::get<1>(tuple)) {
+           argFound = true;
+           param.fusionParam_.ubFn_ = std::get<0>(tuple);
+       }
+   }
+   if (!argFound)
+      throw RuntimeError("Unknown UB type!");
+
 }
 
 template <class IO, class GM, class ACC>

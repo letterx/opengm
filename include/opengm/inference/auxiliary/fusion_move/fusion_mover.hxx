@@ -459,6 +459,9 @@ public:
             connectedComponents_(connectedComponents),
             tentacles_(tentacles),
             fusionTimeLimit_(fusionTimeLimit)
+#ifdef WITH_SOSPD
+          , ubFn_(SoSGraph::UBfn::pairwise)
+#endif
         {
 
         }
@@ -468,6 +471,9 @@ public:
         bool connectedComponents_;
         bool tentacles_;
         double fusionTimeLimit_;
+#ifdef WITH_SOSPD
+        SoSGraph::UBfn ubFn_;
+#endif
     };
 
     HlFusionMover(const GM & gm, const Parameter & param) 
@@ -572,6 +578,7 @@ public:
             }
             else if(param_.fusionSolver_ == SoSFusion){
                     typename SoSSubInf::Parameter subInfParam;
+                    subInfParam.ubFn_ = param_.ubFn_;
                     valRes = fusionMover_. template fuse<SoSSubInf> (subInfParam,true);
             }
             else{
