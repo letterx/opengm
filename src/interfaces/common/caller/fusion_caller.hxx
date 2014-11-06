@@ -65,6 +65,7 @@ inline  FusionCaller<IO, GM, ACC>::FusionCaller(IO& ioIn)
    gen.push_back("ENERGYBLUR");
    gen.push_back("NU_ENERGYBLUR");      
    gen.push_back("BINARY-FLIP");
+   gen.push_back("GRAD");
    addArgument(StringArgument<>(selectedGenType_, "g", "gen", "Selected proposal generator", gen.front(), gen));
    addArgument(StringArgument<>(selectedFusionType_, "f", "fusion", "Select fusion method", fusion.front(), fusion));
    //addArgument(IntArgument<>(numberOfThreads_, "", "threads", "number of threads", static_cast<int>(1)));
@@ -144,6 +145,7 @@ inline void FusionCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, co
    typedef opengm::proposal_gen::BlurGen<GM, opengm::Minimizer> BlurGen;
    typedef opengm::proposal_gen::EnergyBlurGen<GM, opengm::Minimizer> EBlurGen;
    typedef opengm::proposal_gen::BinaryFlipGen<GM, opengm::Minimizer> BFGen;
+   typedef opengm::proposal_gen::GradDescentGen<GM, opengm::Minimizer> GDGen;
 
 
    if(selectedGenType_=="A-EXP"){
@@ -219,6 +221,13 @@ inline void FusionCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, co
    }
    else if (selectedGenType_=="BINARY-FLIP"){
       typedef BFGen Gen;
+      typedef opengm::FusionBasedInf<GM, Gen> INF;
+      typename INF::Parameter para;
+      setParam<INF>(para);
+      this-> template infer<INF, typename INF::TimingVisitorType, typename INF::Parameter>(model, output, verbose, para);
+   }
+   else if (selectedGenType_=="GRAD"){
+      typedef GDGen Gen;
       typedef opengm::FusionBasedInf<GM, Gen> INF;
       typename INF::Parameter para;
       setParam<INF>(para);

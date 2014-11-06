@@ -1100,9 +1100,9 @@ public:
             labelBounds.resize(k);
             for (int i = 0; i < k; ++i) {
                 cliqueLabels[i] = current[clique.variableIndex(i)];
-                labelBounds = gm_.numberOfLabels(clique.variableIndex(i));
+                labelBounds[i] = gm_.numberOfLabels(clique.variableIndex(i));
             }
-            const auto baseEnergy = clique(cliqueLabels);
+            const auto baseEnergy = clique(cliqueLabels.begin());
             // Compute the gradient for each component i, as a finite difference
             for (int i = 0; i < k; ++i) {
                 if (labelBounds[i] == 1)
@@ -1113,9 +1113,9 @@ public:
                 LabelType decrLabel = (origLabel == 0) 
                                     ? origLabel : origLabel - 1;
                 cliqueLabels[i] = incrLabel;
-                auto incrEnergy = clique(cliqueLabels);
+                auto incrEnergy = clique(cliqueLabels.begin());
                 cliqueLabels[i] = decrLabel;
-                auto decrEnergy = clique(cliqueLabels);
+                auto decrEnergy = clique(cliqueLabels.begin());
                 cliqueLabels[i] = origLabel;
                 grad[clique.variableIndex(i)] 
                     += static_cast<float>(incrEnergy-decrEnergy)
@@ -1123,7 +1123,8 @@ public:
             }
         }
         for (int i = 0; i < n; ++i) {
-            proposal[i] = current[i] - static_cast<LabelType>(std::min(param_.gradScale*grad[i], 1.0));
+            proposal[i] = current[i] - static_cast<LabelType>(param_.gradScale*grad[i]);
+            if (proposal[i] == current[i]) proposal[i] -= std::copysign(1.0, grad[i]);
             if (proposal[i] < 0) proposal[i] = 0;
             if (proposal[i] >= gm_.numberOfLabels(i)) proposal[i] = gm_.numberOfLabels(i)-1;
         }

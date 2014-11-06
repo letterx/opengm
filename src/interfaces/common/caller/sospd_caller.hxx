@@ -71,7 +71,7 @@ inline SoSPDCaller<IO, GM, ACC>::SoSPDCaller(IO& ioIn)
    }
    addArgument(StringArgument<>(desiredUBType_, "", "ubType", "Select which upper bound to use", permittedUBTypes.at(0), permittedUBTypes));
    // proposalType
-   std::vector<std::string> permittedProposalTypes = { "aexp", "blur" };
+   std::vector<std::string> permittedProposalTypes = { "aexp", "blur", "grad" };
    addArgument(StringArgument<>(desiredProposalType_, "", "proposal", "Select which proposal generator to use", permittedProposalTypes.at(0), permittedProposalTypes));
 
 }
@@ -126,6 +126,8 @@ void SoSPDCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, const bool
        parameter.proposalType_ = SoSPDType::Parameter::AEXP;
    } else if (desiredProposalType_ == "blur") {
        parameter.proposalType_ = SoSPDType::Parameter::BLUR;
+   } else if (desiredProposalType_ == "grad") {
+       parameter.proposalType_ = SoSPDType::Parameter::GRAD;
    } else {
       throw RuntimeError("Unknown proposal type!");
    } 

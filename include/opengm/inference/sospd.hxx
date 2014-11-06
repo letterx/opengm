@@ -30,7 +30,7 @@ public:
    struct Parameter {
       enum LabelingIntitialType {DEFAULT_LABEL, RANDOM_LABEL, LOCALOPT_LABEL, EXPLICIT_LABEL};
       enum OrderType {DEFAULT_ORDER, RANDOM_ORDER, EXPLICIT_ORDER};
-      enum ProposalType {AEXP, BLUR};
+      enum ProposalType {AEXP, BLUR, GRAD};
 
       Parameter
       (
@@ -264,6 +264,9 @@ SoSPDWrapper<GM, ACC>::infer
     typename proposal_gen::BlurGen<GM,ACC>::Parameter blurParam;
     proposal_gen::BlurGen<GM,ACC> blurGen(gm_, blurParam);
 
+    typename proposal_gen::GradDescentGen<GM,ACC>::Parameter gradParam;
+    proposal_gen::GradDescentGen<GM,ACC> gradGen(gm_, gradParam);
+
     SoSPD<>::ProposalCallback pc;
     if (parameter_.proposalType_ == Parameter::AEXP) {
         pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
@@ -272,6 +275,10 @@ SoSPDWrapper<GM, ACC>::infer
     } else if (parameter_.proposalType_ == Parameter::BLUR) {
         pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
             blurGen.getProposal(current, proposed);
+        };
+    } else if (parameter_.proposalType_ == Parameter::GRAD) {
+        pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
+            gradGen.getProposal(current, proposed);
         };
     }
     sospd.SetProposalCallback(pc);
