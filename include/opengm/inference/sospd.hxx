@@ -96,6 +96,7 @@ private:
    std::vector<LabelType> label_;
    std::vector<LabelType> labelList_;
    size_t maxState_;
+   size_t maxUnchanged_;
    size_t alpha_;
    size_t counter_;
    void incrementAlpha();
@@ -168,6 +169,7 @@ SoSPDWrapper<GM, ACC>::SoSPDWrapper
          maxState_ = numSt;
       }
    }
+   maxUnchanged_ = maxState_;
 
    if(parameter_.labelInitialType_ == Parameter::RANDOM_LABEL) {
       setInitialLabelRandom(parameter_.randSeedLabel_);
@@ -286,6 +288,7 @@ SoSPDWrapper<GM, ACC>::infer
         pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
             gradGen->getProposal(current, proposed);
         };
+        maxUnchanged_ = 1;
     }
     sospd.SetProposalCallback(pc);
 
@@ -297,7 +300,7 @@ SoSPDWrapper<GM, ACC>::infer
    //ValueType energy = gm_.evaluate(label_);
    //visitor.begin(*this,energy,this->bound(),0);
    visitor.begin(*this);
-   while(it++ < parameter_.maxNumberOfSteps_ && countUnchanged < maxState_ && exitInf == false) {
+   while(it++ < parameter_.maxNumberOfSteps_ && countUnchanged < maxUnchanged_ && exitInf == false) {
       // DO MOVE 
       sospd.Solve(1);
       IndexType numberOfChangedVariables = 0;
