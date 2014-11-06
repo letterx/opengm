@@ -1065,6 +1065,75 @@ private:
 
 
 template<class GM, class ACC>
+class GradDescentGen
+{
+public:
+    typedef ACC AccumulationType;
+    typedef GM GraphicalModelType;
+    OPENGM_GM_TYPE_TYPEDEFS;
+    struct Parameter { 
+        float gradScale = 1.0;
+    };
+
+    GradDescentGen(const GM &gm, const Parameter &param)
+        : gm_(gm)
+        , param_(param)
+    { 
+    }
+
+    void reset() { }
+    
+    size_t defaultNumStopIt() {return 2;}
+   
+    void getProposal(const std::vector<LabelType> &current , std::vector<LabelType> &proposal)
+    {
+        const int n = current.size();
+        std::vector<float> grad(n, 0.0);
+        std::vector<LabelType> cliqueLabels;
+        std::vector<LabelType> labelBounds;
+        for (IndexType f = 0; f < gm_.numberOfFactors(); ++f) {
+            const auto& clique = gm_[f];
+            const int k = clique.numberOfVariables();
+            if (k == 0)
+                continue;
+            cliqueLabels.resize(k);
+            labelBounds.resize(k);
+            for (int i = 0; i < k; ++i) {
+                cliqueLabels[i] = current[clique.variableIndex(i)];
+                labelBounds = gm_.numberOfLabels(clique.variableIndex(i));
+            }
+            const auto baseEnergy = clique(cliqueLabels);
+            // Compute the gradient for each component i, as a finite difference
+            for (int i = 0; i < k; ++i) {
+                if (labelBounds[i] == 1)
+                    continue; // Only one label for i, so no gradient
+                LabelType origLabel = cliqueLabels[i];
+                LabelType incrLabel = (origLabel == labelBounds[i]-1) 
+                                    ? origLabel : origLabel + 1;
+                LabelType decrLabel = (origLabel == 0) 
+                                    ? origLabel : origLabel - 1;
+                cliqueLabels[i] = incrLabel;
+                auto incrEnergy = clique(cliqueLabels);
+                cliqueLabels[i] = decrLabel;
+                auto decrEnergy = clique(cliqueLabels);
+                cliqueLabels[i] = origLabel;
+                grad[clique.variableIndex(i)] 
+                    += static_cast<float>(incrEnergy-decrEnergy)
+                     /static_cast<float>(incrLabel - decrLabel);
+            }
+        }
+        for (int i = 0; i < n; ++i) {
+            proposal[i] = current[i] - static_cast<LabelType>(std::min(param_.gradScale*grad[i], 1.0));
+            if (proposal[i] < 0) proposal[i] = 0;
+            if (proposal[i] >= gm_.numberOfLabels(i)) proposal[i] = gm_.numberOfLabels(i)-1;
+        }
+    } 
+private:
+    const GM &gm_;
+    Parameter param_;
+};
+
+template<class GM, class ACC>
 class DynamincGen{
 public:
    typedef ACC AccumulationType;
