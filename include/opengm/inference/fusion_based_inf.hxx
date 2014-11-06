@@ -827,7 +827,7 @@ public:
           proposal.resize(gm_.numberOfVariables(),0.0);
           opengm::RandomUniform<double> randomLabel(-param_.sigma_*1.5, param_.sigma_*1.5,currentStep_);
           for(size_t i=0; i<proposal.size();++i){
-             proposal[i] = std::min(gm_.numberOfLabels(i), (LabelType)(std::max(0.0,bluredLabel_[i] + randomLabel())));
+             proposal[i] = std::min(gm_.numberOfLabels(i)-1, (LabelType)(std::max(0.0,bluredLabel_[i] + randomLabel())));
           }
        }
        ++currentStep_;
