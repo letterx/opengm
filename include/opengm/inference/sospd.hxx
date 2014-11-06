@@ -258,27 +258,33 @@ SoSPDWrapper<GM, ACC>::infer
     params.ub = parameter_.ubFn_;
     SoSPD<> sospd(&energy, params);
 
-    typename proposal_gen::AlphaExpansionGen<GM,ACC>::Parameter aexpParam; 
-    proposal_gen::AlphaExpansionGen<GM,ACC> aexpGen(gm_, aexpParam);
-
-    typename proposal_gen::BlurGen<GM,ACC>::Parameter blurParam;
-    proposal_gen::BlurGen<GM,ACC> blurGen(gm_, blurParam);
-
-    typename proposal_gen::GradDescentGen<GM,ACC>::Parameter gradParam;
-    proposal_gen::GradDescentGen<GM,ACC> gradGen(gm_, gradParam);
+    // Need to make sure proposal generators are persistent for rest of infer, 
+    // but only need one, so keep them as uninitialized pointers till needed
+    typedef proposal_gen::AlphaExpansionGen<GM,ACC> AEGen;
+    std::unique_ptr<AEGen> aexpGen;
+    typedef proposal_gen::BlurGen<GM,ACC> BlurGen;
+    std::unique_ptr<BlurGen> blurGen;
+    typedef proposal_gen::GradDescentGen<GM,ACC> GradGen;
+    std::unique_ptr<GradGen> gradGen;
 
     SoSPD<>::ProposalCallback pc;
     if (parameter_.proposalType_ == Parameter::AEXP) {
+        typename AEGen::Parameter param; 
+        aexpGen.reset(new AEGen(gm_, param));
         pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
-            aexpGen.getProposal(current, proposed);
+            aexpGen->getProposal(current, proposed);
         };
     } else if (parameter_.proposalType_ == Parameter::BLUR) {
+        typename BlurGen::Parameter param;
+        blurGen.reset(new BlurGen(gm_, param));
         pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
-            blurGen.getProposal(current, proposed);
+            blurGen->getProposal(current, proposed);
         };
     } else if (parameter_.proposalType_ == Parameter::GRAD) {
+        typename GradGen::Parameter param;
+        gradGen.reset(new GradGen(gm_, param));
         pc = [&](int niter, const std::vector<MultilabelEnergy::Label>& current, std::vector<MultilabelEnergy::Label>& proposed) {
-            gradGen.getProposal(current, proposed);
+            gradGen->getProposal(current, proposed);
         };
     }
     sospd.SetProposalCallback(pc);
