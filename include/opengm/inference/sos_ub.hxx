@@ -220,14 +220,22 @@ SoS_UBWrapper<GM, ACC>::infer
            solver.AddClique(nodes, energyTable);
        }
    }
-   solver.Solve();
-   for (IndexType i = 0; i < gm_.numberOfVariables(); ++i) {
-      int label = solver.GetLabel(i);
-      label_[i] = label;
+   int iter = 0;
+   bool labelChanged = true;
+   while (iter < 10 && labelChanged) {
+       labelChanged = false;
+       solver.Solve();
+       for (IndexType i = 0; i < gm_.numberOfVariables(); ++i) {
+          int label = solver.GetLabel(i);
+          if (label != label_[i])
+              labelChanged = true;
+          label_[i] = label;
+       }
+         
+       OPENGM_ASSERT(gm_.numberOfVariables() == label_.size());
+       visitor(*this);
+       iter++;
    }
-     
-   OPENGM_ASSERT(gm_.numberOfVariables() == label_.size());
-   visitor(*this);
    visitor.end(*this);
    return NORMAL; 
 }
