@@ -222,7 +222,8 @@ SoS_UBWrapper<GM, ACC>::infer
    }
    int iter = 0;
    bool labelChanged = true;
-   while (iter < 10 && labelChanged) {
+   int maxIter = (parameter_.ubFn_ == SoSGraph::UBfn::pairwise_local_search) ? 10 : 1;
+   while (iter < maxIter && labelChanged) {
        labelChanged = false;
        solver.Solve();
        for (IndexType i = 0; i < gm_.numberOfVariables(); ++i) {
