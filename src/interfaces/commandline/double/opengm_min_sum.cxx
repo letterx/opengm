@@ -139,6 +139,7 @@ int main(int argc, char** argv) {
 
    typedef meta::TypeListGenerator<
       opengm::ExplicitFunction<ValueType, IndexType, LabelType>,
+      opengm::SparseFunction<ValueType, IndexType, LabelType>,
       opengm::PottsFunction<ValueType, IndexType, LabelType>,
       opengm::PottsNFunction<ValueType, IndexType, LabelType>,
       opengm::PottsGFunction<ValueType, IndexType, LabelType>,

@@ -33,6 +33,7 @@ protected:
    size_t randSeedLabel_;
    std::string desiredLabelInitialType_;
    std::string desiredUBType_;
+   std::string desiredAlgType_;
    std::vector<typename GM::LabelType> label_;
  
    void runImpl(GM& model, OutputBase& output, const bool verbose);
@@ -54,6 +55,11 @@ inline SoS_UBCaller<IO, GM, ACC>::SoS_UBCaller(IO& ioIn)
        permittedUBTypes.push_back(std::get<1>(tuple));
    }
    addArgument(StringArgument<>(desiredUBType_, "", "ubType", "Select which upper bound to use", permittedUBTypes.at(0), permittedUBTypes));
+
+   std::vector<std::string> permittedAlgTypes;
+   for (const auto& p : SubmodularIBFSParams::algNames)
+       permittedAlgTypes.push_back(p.second);
+   addArgument(StringArgument<>(desiredAlgType_, "", "flowAlg", "Select which flow algorithm to use", permittedAlgTypes.at(0), permittedAlgTypes));
 
 }
 
@@ -88,6 +94,17 @@ void SoS_UBCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, const boo
    }
    if (!ubFound) {
       throw RuntimeError("Unknown UB type!");
+   }
+
+   bool flowAlgFound = false;
+   for (const auto& p : SubmodularIBFSParams::algNames) {
+       if (desiredAlgType_ == p.second) {
+           flowAlgFound = true;
+           parameter.flowAlg_ = p.first;
+       }
+   }
+   if (!flowAlgFound) {
+      throw RuntimeError("Unknown Alg type!");
    }
 
    this-> template infer<SoS_UBType, TimingVisitorType, typename SoS_UBType::Parameter>(model, output, verbose, parameter);

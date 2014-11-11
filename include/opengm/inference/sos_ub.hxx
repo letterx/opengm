@@ -37,7 +37,8 @@ public:
          labelInitialType_(DEFAULT_LABEL),
          randSeedLabel_(0),
          label_(),
-         ubFn_(SoSGraph::UBfn::pairwise)
+         ubFn_(SoSGraph::UBfn::pairwise),
+         flowAlg_(SubmodularIBFSParams::FlowAlgorithm::bidirectional)
       {}
 
       size_t maxNumberOfSteps_;
@@ -45,6 +46,7 @@ public:
       unsigned int randSeedLabel_;
       std::vector<LabelType> label_;
       SoSGraph::UBfn ubFn_;
+      SubmodularIBFSParams::FlowAlgorithm flowAlg_;
    };
 
    SoS_UBWrapper(const GraphicalModelType&, Parameter para = Parameter());
@@ -190,6 +192,7 @@ SoS_UBWrapper<GM, ACC>::infer
 
    SubmodularIBFSParams params;
    params.ub = parameter_.ubFn_;
+   params.alg = parameter_.flowAlg_;
    SubmodularIBFS solver{params};
    solver.AddNode(gm_.numberOfVariables());
 

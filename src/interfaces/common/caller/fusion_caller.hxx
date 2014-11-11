@@ -39,6 +39,7 @@ protected:
    float temperature_;
    double sigma_;
    std::string desiredUBType_;
+   std::string desiredFlowAlg_;
    
 public:
    const static std::string name_;
@@ -78,11 +79,17 @@ inline  FusionCaller<IO, GM, ACC>::FusionCaller(IO& ioIn)
    addArgument(BoolArgument(tentacles_,"","tentacles", "use reduced inference tentacles"));
    addArgument(FloatArgument<>(temperature_, "temp", "temperature", "temperature for non uniform random proposal generator", static_cast<float>(1.0))); 
    addArgument(DoubleArgument<>(sigma_, "", "sigma", "standard devariation used for bluring", static_cast<double>(20.0)));
+
    std::vector<std::string> permittedUBTypes;
    for (const auto& tuple : SoSGraph::ubParamList) {
        permittedUBTypes.push_back(std::get<1>(tuple));
    }
    addArgument(StringArgument<>(desiredUBType_, "", "ubType", "Select which upper bound to use", permittedUBTypes.at(0), permittedUBTypes));
+
+   std::vector<std::string> permittedAlgTypes;
+   for (const auto& p : SubmodularIBFSParams::algNames)
+       permittedAlgTypes.push_back(p.second);
+   addArgument(StringArgument<>(desiredFlowAlg_, "", "flowAlg", "Select which flow algorithm to use", permittedAlgTypes.at(0), permittedAlgTypes));
 }
 
 template <class IO, class GM, class ACC>
@@ -127,6 +134,19 @@ inline void FusionCaller<IO, GM, ACC>::setParam(
    }
    if (!argFound)
       throw RuntimeError("Unknown UB type!");
+
+
+   bool algFound = false;
+   for (const auto& p : SubmodularIBFSParams::algNames) {
+       if (desiredFlowAlg_ == p.second) {
+           algFound = true;
+           param.fusionParam_.alg_ = p.first;
+       }
+   }
+   if (!algFound) {
+      throw RuntimeError("Unknown Alg type!");
+   }
+
 
 }
 

@@ -461,6 +461,7 @@ public:
             fusionTimeLimit_(fusionTimeLimit)
 #ifdef WITH_SOSPD
           , ubFn_(SoSGraph::UBfn::pairwise)
+          , alg_(SubmodularIBFSParams::FlowAlgorithm::bidirectional)
 #endif
         {
 
@@ -473,6 +474,7 @@ public:
         double fusionTimeLimit_;
 #ifdef WITH_SOSPD
         SoSGraph::UBfn ubFn_;
+        SubmodularIBFSParams::FlowAlgorithm alg_;
 #endif
     };
 
@@ -579,6 +581,7 @@ public:
             else if(param_.fusionSolver_ == SoSFusion){
                     typename SoSSubInf::Parameter subInfParam;
                     subInfParam.ubFn_ = param_.ubFn_;
+                    subInfParam.flowAlg_ = param_.alg_;
                     valRes = fusionMover_. template fuse<SoSSubInf> (subInfParam,true);
             }
             else{
