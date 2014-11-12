@@ -154,6 +154,7 @@ LocalSearchWrapper<GM, ACC>::infer
    LSHOE solver{param};
    solver.AddNode(gm_.numberOfVariables());
 
+   std::cout << "start addcliques" << std::endl;
    for(IndexType f=0; f<gm_.numberOfFactors(); ++f){
        auto& c = gm_[f];
        const size_t k = c.numberOfVariables();
@@ -181,6 +182,7 @@ LocalSearchWrapper<GM, ACC>::infer
            solver.AddClique(nodes, energyTable);
        }
    }
+   std::cout << "end addcliques" << std::endl;
    LocalSearch crf;
    solver.ToQuadratic(crf);
    crf.Solve();
