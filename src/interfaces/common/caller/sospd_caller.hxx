@@ -3,11 +3,55 @@
 
 #include <opengm/opengm.hxx>
 #include <opengm/inference/sospd.hxx>
+#include <opengm/inference/visitors/visitors.hxx>
 
 #include "../argument/argument.hxx"
 
 
 namespace opengm {
+
+namespace visitors {
+
+template<class INFERENCE>
+class ApproxNormVisitor : public TimingVisitor<INFERENCE>{
+public:
+  typedef typename  INFERENCE::ValueType ValueType;
+  
+  ApproxNormVisitor(
+    const size_t visithNth=1,
+    const size_t reserve=0,
+    const bool   verbose=true,
+    const bool   multiline=true,
+    const double timeLimit=std::numeric_limits<double>::infinity(),
+    const double gapLimit=0.0,
+    const size_t memLogging=0
+  ) 
+      : TimingVisitor<INFERENCE>(visithNth,
+              reserve, 
+              verbose, 
+              multiline, 
+              timeLimit, 
+              gapLimit, 
+              memLogging) 
+  { 
+    L1gap_ = & this->protocolMap_["L1gap"];
+    L2gap_ = & this->protocolMap_["L2gap"];
+    LInftygap_ = & this->protocolMap_["LInftygap"];
+  }
+
+  size_t operator()(INFERENCE& inf) {
+    L1gap_->push_back(inf.L1gap());
+    L2gap_->push_back(inf.L2gap());
+    LInftygap_->push_back(inf.LInftygap());
+    return TimingVisitor<INFERENCE>::operator()(inf);
+  }
+protected:
+  std::vector<double  > * L1gap_;
+  std::vector<double  > * L2gap_;
+  std::vector<double  > * LInftygap_;
+};
+
+}
 
 namespace interface {
 
@@ -20,6 +64,7 @@ public:
    typedef typename SoSPDType::VerboseVisitorType VerboseVisitorType;
    typedef typename SoSPDType::EmptyVisitorType EmptyVisitorType;
    typedef typename SoSPDType::TimingVisitorType TimingVisitorType;
+   typedef typename visitors::ApproxNormVisitor<SoSPDType> ApproxNormVisitorType;
    const static std::string name_;
    SoSPDCaller(IO& ioIn);
 
@@ -132,7 +177,7 @@ void SoSPDCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, const bool
       throw RuntimeError("Unknown proposal type!");
    } 
 
-   this-> template infer<SoSPDType, TimingVisitorType, typename SoSPDType::Parameter>(model, output, verbose, parameter);
+   this-> template infer<SoSPDType, ApproxNormVisitorType, typename SoSPDType::Parameter>(model, output, verbose, parameter);
 
  
 }

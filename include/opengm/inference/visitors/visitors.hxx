@@ -317,10 +317,11 @@ public:
     return *iterations_;
   } 
 
+protected:
+  std::map< std::string, std::vector<double  > >  protocolMap_;
 
 private:
 
-  std::map< std::string, std::vector<double  > >  protocolMap_;
   std::vector<std::string> extraLogs_;
   std::vector<double  > * ctime_;
   std::vector<double  > * times_;

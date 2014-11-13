@@ -71,6 +71,10 @@ public:
    void setStartingPoint(typename std::vector<LabelType>::const_iterator);
    InferenceTermination arg(std::vector<LabelType>&, const size_t = 1) const;
 
+   double L1gap() { return L1gap_; }
+   double L2gap() { return L2gap_; }
+   double LInftygap() { return LInftygap_; }
+
 private:
    class CliqueWrapper : public Clique {
        public:
@@ -105,6 +109,9 @@ private:
    void setInitialLabel(std::vector<LabelType>& l);
    void setInitialLabelLocalOptimal();
    void setInitialLabelRandom(unsigned int);
+   double L1gap_;
+   double L2gap_;
+   double LInftygap_;
 };
 
 template<class GM, class ACC>
@@ -320,6 +327,10 @@ SoSPDWrapper<GM, ACC>::infer
       }else{
          ++countUnchanged;
       }
+      auto normStats = sospd.GetFlow()->NormStats();
+      L1gap_ = normStats->L1;
+      L2gap_ = normStats->L2;
+      LInftygap_ = normStats->LInfty;
       //visitor(*this,energy2,this->bound(),"alpha",alpha_);
       if( visitor(*this) != visitors::VisitorReturnFlag::ContinueInf ){
          exitInf = true;
