@@ -29,8 +29,9 @@ protected:
    using BaseClass::io_;
    using BaseClass::infer;
 
-   int dummyIntParam_;
-   std::string dummyStringParam_;
+   int rows_;
+   int cols_;
+   bool debug_;
 
    void runImpl(GM& model, OutputBase& output, const bool verbose);
 };
@@ -39,28 +40,18 @@ template <class IO, class GM, class ACC>
 inline LocalSearchCaller<IO, GM, ACC>::LocalSearchCaller(IO& ioIn)
    : BaseClass(name_, "detailed description of Local Search caller...", ioIn) {
 
-   addArgument(IntArgument<>(dummyIntParam_, "", "dummyInt", "A dummy integer parameter with default 100", 100));
-
-   std::vector<std::string> permittedDummyStringTypes = { "FOO", "BAR", "BAZ" };
-   addArgument(StringArgument<>(dummyStringParam_, "", "dummyString", "a dummy parameter with finite choices", permittedDummyStringTypes.at(0), permittedDummyStringTypes));
+   addArgument(IntArgument<>(rows_, "", "rows", "Number of rows in image with default 100", 100));
+   addArgument(IntArgument<>(cols_, "", "cols", "Number of cols in image with default 100", 100));
+   addArgument(BoolArgument(debug_, "", "debug", "Boolean for whether or not to include debug effects"));
 }
 
 template <class IO, class GM, class ACC>
 void LocalSearchCaller<IO, GM, ACC>::runImpl(GM& model, OutputBase& output, const bool verbose) {
  
    typename LocalSearchType::Parameter parameter;
-   parameter.dummyInt_ = dummyIntParam_;
-
-   //LabelInitialType
-   if(dummyStringParam_ == "FOO") {
-      parameter.dummyEnum_ = LocalSearchType::Parameter::FOO;
-   } else if(dummyStringParam_ == "BAR") {
-      parameter.dummyEnum_ = LocalSearchType::Parameter::BAR;
-   } else if(dummyStringParam_ == "BAZ") {
-      parameter.dummyEnum_ = LocalSearchType::Parameter::BAZ;
-   } else {
-      throw RuntimeError("Unknown initial label type!");
-   }
+   parameter.rows = rows_;
+   parameter.cols = cols_;
+   parameter.debug = debug_;
 
    this-> template infer<LocalSearchType, TimingVisitorType, typename LocalSearchType::Parameter>(model, output, verbose, parameter);
 

@@ -49,6 +49,11 @@
         target_link_libraries(opengm_min_sum ${SOSPD_LIB})
         target_link_libraries(opengm_min_sum ${GUROBI_LIBRARY})
     endif(WITH_SOSPD)
+
+    if (WITH_OPENCV)
+        target_link_libraries(opengm_min_sum ${OpenCV_LIBS})
+    endif(WITH_OPENCV)
+
     if(WITH_CPLEX)
         if(WIN32)
 	       target_link_libraries(opengm_max_prod wsock32.lib ${CPLEX_LIBRARIES})

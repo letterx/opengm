@@ -22,15 +22,15 @@ public:
    typedef visitors::TimingVisitor<LocalSearchWrapper<GM,ACC> >  TimingVisitorType;
 
    struct Parameter {
-      enum DummyEnum { FOO, BAR, BAZ };
+      int rows;
+      int cols;
+      bool debug;
 
       Parameter ( )
-      : dummyInt_(0),
-        dummyEnum_(FOO)
+      : rows(0),
+        cols(0),
+        debug(false)
       {}
-
-      int dummyInt_;
-      DummyEnum dummyEnum_;
    };
 
    LocalSearchWrapper(const GraphicalModelType&, Parameter para = Parameter());
@@ -151,9 +151,11 @@ LocalSearchWrapper<GM, ACC>::infer
 
    typedef LocalSearchHigherOrderEnergy<REAL, maxOrder_> LSHOE;
    typename LSHOE::Parameter param;
+   param.rows = parameter_.rows;
+   param.cols = parameter_.cols;
+   param.debug = parameter_.debug;
    LSHOE solver{param};
    solver.AddNode(gm_.numberOfVariables());
-
    std::cout << "start addcliques" << std::endl;
    for(IndexType f=0; f<gm_.numberOfFactors(); ++f){
        auto& c = gm_[f];

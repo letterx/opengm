@@ -91,6 +91,7 @@ OPTION(WITH_MATLAB "Activate MatLab-Code" OFF)
 OPTION(BUILD_CONVERTER "Build several converters" OFF)
 OPTION(BUILD_PYTHON_WRAPPER "Build python wrapper" OFF)
 OPTION(BUILD_MATLAB_WRAPPER "Build matlab wrapper" OFF)
+OPTION(WITH_OPENCV "Include OpenCV" ON)
 ###Grante needs C++11. Since we have not tested OpenGM under this standard yet, using Grante is realy experimental!!!
 ###OPTION(WITH_GRANTE "Include wrapper for grante" OFF)
 
@@ -486,6 +487,15 @@ else()
 endif(WITH_MPLP)
 
 #--------------------------------------------------------------
+# OpenCV
+#--------------------------------------------------------------
+if(WITH_OPENCV)
+    message(STATUS "build with OpenCV")
+    find_package(OpenCV REQUIRED)
+endif(WITH_OPENCV)
+
+
+#--------------------------------------------------------------
 # thread lib
 #--------------------------------------------------------------
 find_package(Threads)
@@ -666,8 +676,6 @@ if(BUILD_PYTHON_WRAPPER)
    PATTERN  ".txt" EXCLUDE
    PATTERN  ".hxx" EXCLUDE )
 endif()
-
-
 
 #--------------------------------------------------------------
 # package with cpack
