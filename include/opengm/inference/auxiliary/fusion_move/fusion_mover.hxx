@@ -460,7 +460,7 @@ public:
             tentacles_(tentacles),
             fusionTimeLimit_(fusionTimeLimit)
 #ifdef WITH_SOSPD
-          , ubFn_(SoSGraph::UBfn::pairwise)
+          , ubFn_(SoSGraph::UBfn::cvpr14)
           , alg_(SubmodularIBFSParams::FlowAlgorithm::bidirectional)
 #endif
         {

@@ -37,7 +37,7 @@ public:
          labelInitialType_(DEFAULT_LABEL),
          randSeedLabel_(0),
          label_(),
-         ubFn_(SoSGraph::UBfn::pairwise),
+         ubFn_(SoSGraph::UBfn::cvpr14),
          flowAlg_(SubmodularIBFSParams::FlowAlgorithm::bidirectional)
       {}
 
@@ -225,7 +225,7 @@ SoS_UBWrapper<GM, ACC>::infer
    }
    int iter = 0;
    bool labelChanged = true;
-   int maxIter = (parameter_.ubFn_ == SoSGraph::UBfn::pairwise_local_search) ? 10 : 1;
+   int maxIter = 1;
    while (iter < maxIter && labelChanged) {
        labelChanged = false;
        solver.Solve();

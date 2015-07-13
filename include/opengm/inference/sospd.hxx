@@ -43,7 +43,7 @@ public:
          randSeedLabel_(0),
          labelOrder_(),
          label_(),
-         ubFn_(SoSGraph::UBfn::pairwise),
+         ubFn_(SoSGraph::UBfn::cvpr14),
          proposalType_(AEXP)
       {}
 
